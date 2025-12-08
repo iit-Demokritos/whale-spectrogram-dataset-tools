@@ -122,10 +122,48 @@ class WhalesBaseDataset(Dataset, ABC):
 
     
 class LineLevelDataset(WhalesBaseDataset):
+    """Dataset loader for the line-level subset."""
     def _get_paths(self) -> Tuple[Path, Path]:
         return self.dataset_dir / 'images' / 'lines', self.dataset_dir / 'labels' / 'line_level'
     
-    def _parse_label(self, label_path):
+    def _parse_label(self, 
+        label_path: Union[str, Path]
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Parses line-level JSON data and reformats it for easy lookup by line image name.
+
+        Expected JSON structure:
+        {   
+            'general_image_name': filename.png
+            'line_level_info': [
+                {
+                    'image_name': 'filename-{line_id}.png',
+                    'line_id': int,
+                    'song_id': int,
+                    'unit_intervals': [[start, end], ...],
+                    'mute_intervals': [[start, end], ...],
+                    'unit_classes': [class_name, ...],
+                    'image_height': int,
+                    'image_width': int
+                },
+                ...
+            ]
+        }
+
+        Args:
+            label_path: Path to the JSON.
+        Returns:
+            A dictionary where the key is the image file name and its values are the intervals and their respective unit 
+            classes. It follows the structure:
+
+            new_dict = {
+                'filename-{line_id}.png': {
+                    'unit_intervals': [[start, end], ...],
+                    'unit_classes': [class_name, ...]
+                }
+            }
+        """
+
         with open(label_path) as js:
             data = json.load(js)
 
@@ -141,10 +179,42 @@ class LineLevelDataset(WhalesBaseDataset):
     
 
 class PageLevelDataset(WhalesBaseDataset):
+    """Dataset loader for the page-level subset."""
     def _get_paths(self):
         return self.dataset_dir / 'images' / 'pages', self.dataset_dir / 'labels' / 'page_level'
 
     def _parse_label(self, label_path):
+        """
+        Parses page-level JSON data and extracts all line polygon coordinates.
+
+        Expected JSON structure:
+        {
+            'image_name': 'filename.png',
+            'image_height': int,
+            'image_width': int,
+            'polygons': [
+                {   'line_id': int,
+                    'song_id': int,
+                    'points': [[x1, y1], [x2, y2], [x3, y3], ...]
+                },
+                ...
+            ]
+        }
+
+        Args:
+            label_path: Path to the JSON.
+        Returns:
+            A dictionary where the key is the image name and its value is a list of all polygon coordinates. It follows 
+            the structure:
+
+            new_dict = {
+                'filename.png': [
+                    [[x1, y1], [x2, y2], [x3, y3], ...],
+                    [[x1, y1], [x2, y2], [x3, y3], ...],
+                    ...
+                ]
+            }
+        """
         with open(label_path) as js:
             data = json.load(js)
 
