@@ -58,13 +58,13 @@ class RandomSpectrogramLinePatcher:
         new_intervals, new_classes = [], []
         for i, (start, stop) in enumerate(intervals):
 
-            # Shift x-coordinates
+            # Shift intervals
             new_start = start - patch_start_point
             new_stop = stop - patch_start_point
 
             if (new_stop > 0) and (new_start < self.patch_width):
 
-                # Clamp the new coordinates
+                # Clamp the new intervals
                 new_start = max(0, new_start)
                 new_stop = min(new_stop, self.patch_width - 1)
 
