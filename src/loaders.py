@@ -2,8 +2,8 @@ from pathlib import Path
 import json
 from torch.utils.data import Dataset
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Dict, Any, Union, Callable
-from PIL import Image
+from typing import Tuple, List, Dict, Any, Callable
+from PIL import Image, ImageOps
 
 def _is_valid_file(filepath: Path) -> bool:
     """Helper function to filter any hidden .txt files, or files that are in hidden folders (e.g. ".ipynb_checkpoints", 
@@ -26,7 +26,7 @@ class WhalesBaseDataset(Dataset, ABC):
 
     def __init__(
         self, 
-        dataset_dir: Union[str, Path], 
+        dataset_dir: str | Path, 
         transform: Callable=None
     ):
         super().__init__()
@@ -72,7 +72,9 @@ class WhalesBaseDataset(Dataset, ABC):
         pass
 
     @abstractmethod
-    def _parse_label(self, label_path: Path) -> Dict[str, Any]:
+    def _parse_label(self, 
+        label_path: str | Path
+    ) -> Dict[str, Any]:
         """
         Abstract method to parse a specific label file format.
 
@@ -114,6 +116,8 @@ class WhalesBaseDataset(Dataset, ABC):
 
         image_path = self.image_paths[index]
         image = Image.open(image_path)
+        image = image.convert('RGB') # Convert grayscale -> RGB, to fit with the most ML frameworks.
+        image = ImageOps.invert(image) # Negate the image (white foreground/zero background). Still in [0, 255] (uint8).
         labels = self.labels_data[image_path.name]
         if self.transform:
             image, labels = self.transform(image, labels)
@@ -127,8 +131,8 @@ class LineLevelDataset(WhalesBaseDataset):
         return self.dataset_dir / 'images' / 'lines', self.dataset_dir / 'labels' / 'line_level'
     
     def _parse_label(self, 
-        label_path: Union[str, Path]
-    ) -> Dict[str, Dict[str, Any]]:
+        label_path: str | Path
+    ) -> Dict[str, Dict[str, List]]:
         """
         Parses line-level JSON data and reformats it for easy lookup by line image name.
 
@@ -183,7 +187,9 @@ class PageLevelDataset(WhalesBaseDataset):
     def _get_paths(self):
         return self.dataset_dir / 'images' / 'pages', self.dataset_dir / 'labels' / 'page_level'
 
-    def _parse_label(self, label_path):
+    def _parse_label(self, 
+        label_path: str | Path
+    ) -> Dict[str, List[float]]:
         """
         Parses page-level JSON data and extracts all line polygon coordinates.
 
@@ -215,6 +221,7 @@ class PageLevelDataset(WhalesBaseDataset):
                 ]
             }
         """
+
         with open(label_path) as js:
             data = json.load(js)
 
