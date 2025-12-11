@@ -3,12 +3,15 @@ from pathlib import Path
 from collections import defaultdict
 from typing import List, Dict, Tuple, Any, Callable
 import torch
+import numpy as np
 from torchvision.ops import box_iou
 import csv, json
 
 # ==============================================================================
 #                               TYPE DEFINITIONS
 # ==============================================================================
+TensorLike = torch.Tensor | np.ndarray | list | tuple
+
 # Dictionary where keys are class names and values are dictionaries with the metric results 
 # (e.g. { 'objectX' : {'Precision': 0.9876543210, 'Recall': ..., ...})
 MetricsData = Dict[str, Dict[str, float | int]]
@@ -74,7 +77,7 @@ def _filter_predictions_and_sort(
 def find_matching_predictions(
     predictions: LoadedBoxesData, 
     ground_truths: LoadedBoxesData, 
-    target_class: str =None, 
+    target_class: str, 
     iou_thresh: float =.5
 ) -> MatchedPredsData:
     
@@ -125,9 +128,9 @@ def find_matching_predictions(
     return tp, fp, scores, instances_number
 
 def calculate_precision_recall_f1(
-    tp: torch.Tensor, 
-    fp: torch.Tensor, 
-    scores: torch.Tensor, 
+    tp: TensorLike, 
+    fp: TensorLike, 
+    scores: TensorLike, 
     instances_number: int,
     score_threshold: float =.25
 ) -> Tuple[float, float, float]:
@@ -171,9 +174,9 @@ def calculate_precision_recall_f1(
     return precision.item(), recall.item(), f1.item()
 
 def calculate_average_precision(
-    tp: torch.Tensor, 
-    fp: torch.Tensor, 
-    scores: torch.Tensor, 
+    tp: TensorLike, 
+    fp: TensorLike, 
+    scores: TensorLike, 
     instances_number: int
 ) -> float:
     """
@@ -245,9 +248,9 @@ def evaluate_predictions(
     total_matches, total_instances = [], 0 # They will be used to calculate micro averages
     total_prec, total_rec, total_f1, total_ap = 0, 0, 0, 0 # They will be used to calculate macro averages
     
-    for cls in classes:
+    for target_class in classes:
         # Find matches
-        tp, fp, scores, inst_num = find_matching_predictions(total_preds, total_gts, target_class=cls)
+        tp, fp, scores, inst_num = find_matching_predictions(total_preds, total_gts, target_class)
         
         # Calculate metrics
         prec, rec, f1 = calculate_precision_recall_f1(tp, fp, scores, inst_num, score_threshold=score_threshold)
@@ -261,7 +264,7 @@ def evaluate_predictions(
         total_f1 += f1
         total_ap += avg_prec
     
-        all_metrics[cls] = {
+        all_metrics[target_class] = {
             'Precision': prec,
             'Recall': rec,
             'f1': f1,
@@ -373,8 +376,8 @@ def _is_valid_file(filepath: Path) -> bool:
     return all(map(check, filepath.parts))
 
 def load_predictions_and_gts(
-    predictions_dir: str,
-    ground_truths_dir: str,
+    predictions_dir: str | Path,
+    ground_truths_dir: str | Path,
     classes: List[str],
 ) -> Tuple[LoadedBoxesData, LoadedBoxesData]:
     """

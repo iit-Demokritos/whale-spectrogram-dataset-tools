@@ -4,13 +4,15 @@ from torch.utils.data import Dataset
 from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict, Any, Callable
 from PIL import Image, ImageOps
+import copy
 
 def _is_valid_file(filepath: Path) -> bool:
     """Helper function to filter any hidden .txt files, or files that are in hidden folders (e.g. ".ipynb_checkpoints", 
     ".git", etc.)"""
 
-    check = lambda part: not part.startswith('.') or part in {'.', '..'}
+    check = lambda part: not part.startswith('.') or part == '..'
     return all(map(check, filepath.parts))
+
 
 class WhalesBaseDataset(Dataset, ABC):
     """
@@ -27,10 +29,16 @@ class WhalesBaseDataset(Dataset, ABC):
     def __init__(
         self, 
         dataset_dir: str | Path, 
-        transform: Callable=None
+        classes_filepath: str | Path,
+        transform: Callable | None = None
     ):
         super().__init__()
         self.dataset_dir = Path(dataset_dir)
+
+        with open(classes_filepath) as f: # NOTE: .txt file
+            classes = [c.strip() for c in f if c.strip()]
+
+        self.class_map = {cls: i for i, cls in enumerate(classes)}
         self.transform = transform
 
         # Get the paths to images and labels for the subset
@@ -118,12 +126,16 @@ class WhalesBaseDataset(Dataset, ABC):
         image = Image.open(image_path)
         image = image.convert('RGB') # Convert grayscale -> RGB, to fit with the most ML frameworks.
         image = ImageOps.invert(image) # Negate the image (white foreground/zero background). Still in [0, 255] (uint8).
-        labels = self.labels_data[image_path.name]
+        labels = copy.deepcopy(self.labels_data[image_path.name])
+
+        labels['unit_classes'] = [
+            self.class_map[c] for c in labels['unit_classes']
+        ]
+
         if self.transform:
             image, labels = self.transform(image, labels)
 
-        return image, labels
-
+        return image, labels   
     
 class LineLevelDataset(WhalesBaseDataset):
     """Dataset loader for the line-level subset."""
