@@ -97,7 +97,7 @@ class RandomSpectrogramLinePatcher:
 class ImageToTensor:
     """
     Transforms the PIL image of shape H x W x C and values in [0, 255] to a torch tensor of shape C x H x W and values 
-    in [0, 1]. It does not handle "labels", they are passed as input to maintain I/O consistency for the transforms.
+    in [0, 1]. It does not handle "labels", they are just passed as input to maintain I/O consistency for the transforms.
     """
     def __call__(
         self, 
