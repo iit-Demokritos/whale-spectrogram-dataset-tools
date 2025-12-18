@@ -13,7 +13,6 @@ def _is_valid_file(filepath: Path) -> bool:
     check = lambda part: not part.startswith('.') or part == '..'
     return all(map(check, filepath.parts))
 
-
 class WhalesBaseDataset(Dataset, ABC):
     """
     Base Class for the Humpback Whale Song Spectrogram Dataset. It handles the core logic for loading and parsing the 
