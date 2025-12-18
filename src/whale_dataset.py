@@ -25,7 +25,6 @@ class WhalesBaseDataset(Dataset, ABC):
         image_paths: List of image file paths of teh subset.
         labels_data: Dictionary of all parsed labels. Image names serve as keys.      
     """
-
     def __init__(
         self, 
         dataset_dir: str | Path, 
@@ -76,7 +75,6 @@ class WhalesBaseDataset(Dataset, ABC):
         Returns:
             A tuple containing (image_dir, label_dir).
         """
-
         pass
 
     @abstractmethod
@@ -96,7 +94,6 @@ class WhalesBaseDataset(Dataset, ABC):
 
     def _parse_all_labels(self):
         """Iterates over all JSON files in the label directory and aggregates them into a single dictionary."""
-
         label_paths = self.label_dir.rglob('*.json')
         labels_data = {}
         for path in label_paths:
@@ -121,7 +118,6 @@ class WhalesBaseDataset(Dataset, ABC):
         Returns:
             A Tuple of (image and label). Applies a transform, if one is specified.
         """
-
         image_path = self.image_paths[index]
         image = Image.open(image_path)
         image = image.convert('RGB') # Convert grayscale -> RGB, to fit with the most ML frameworks.
@@ -179,7 +175,6 @@ class LineLevelDataset(WhalesBaseDataset):
                 }
             }
         """
-
         with open(label_path) as js:
             data = json.load(js)
 
@@ -191,8 +186,7 @@ class LineLevelDataset(WhalesBaseDataset):
                 'unit_classes': entry['unit_classes']
             }
 
-        return labels_info
-    
+        return labels_info 
 
 class PageLevelDataset(WhalesBaseDataset):
     """Dataset loader for the page-level subset."""
@@ -233,7 +227,6 @@ class PageLevelDataset(WhalesBaseDataset):
                 ]
             }
         """
-
         with open(label_path) as js:
             data = json.load(js)
 

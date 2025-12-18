@@ -46,7 +46,6 @@ def _group_ground_truths_by_image(
         A tuple containing the dictionary with the instances of the target class per image, and the total number of the 
         instances of the class.
     """
-
     gts_per_image = defaultdict(lambda: {'boxes': [], 'matches': []})
     for gt in ground_truths:
         if gt['class'] != target_class:
@@ -80,7 +79,6 @@ def find_matching_predictions(
     target_class: str, 
     iou_thresh: float =.5
 ) -> MatchedPredsData:
-    
     """Matches the predictions with the ground truths of a specific object class
     
     Args
@@ -93,7 +91,6 @@ def find_matching_predictions(
         A tuple containing True Positives, False Positives, scores, and the number of GT instances 
         for the target class.
     """
-
     gts_per_image, instances_number = _group_ground_truths_by_image(ground_truths, target_class)
     sorted_predictions = _filter_predictions_and_sort(predictions, target_class)
 
@@ -190,7 +187,6 @@ def calculate_average_precision(
     Returns:
         The Average Precision.
     """
-
     if instances_number == 0 or len(scores) == 0:
         return 0.0
     
@@ -231,7 +227,6 @@ def evaluate_predictions(
     classes: List[Any], 
     score_threshold: float = 0.25
 ) -> MetricsData:
-    
     """Orchestrates the evaluation pipeline and calculates metrics.
     
     Args:
@@ -243,7 +238,6 @@ def evaluate_predictions(
     Returns:
         A dictionary containing the results of the metrics.
     """
-
     all_metrics = {} # Dictionary to store the overall results for the evaluation
     total_matches, total_instances = [], 0 # They will be used to calculate micro averages
     total_prec, total_rec, total_f1, total_ap = 0, 0, 0, 0 # They will be used to calculate macro averages
@@ -328,7 +322,6 @@ def load_boxes(
             'box': The coordinates [x1, y1, x2, y2] of the box.
             'score': Confidence score (only if with_conf=True).
     """
-
     filepath = Path(filepath)
     image_name = filepath.with_suffix('.png').name 
     boxes = []
@@ -416,7 +409,6 @@ def export_to_csv(
     output_path: Path
 ) -> None:
     """ Saves metrics to a CSV file."""
-
     with open(output_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Class', 'Precision', 'Recall', 'f1', 'AP_50', 'Boxes num.'])
@@ -429,7 +421,6 @@ def export_to_json(
     output_path: Path
 ) -> None:
     """Saves metrics to a JSON file."""
-
     with open(output_path, 'w') as f:
         json.dump(metrics, f, indent=4)
 
@@ -441,7 +432,6 @@ def export_metrics(
 ) -> None:
     """Base function to save the metrics to a file. It calls the respective export function, according to the preferred 
     format."""
-
     output_format = output_format.lower()
     # Exporters, to map the given "output_format" to the respective function
     exporters = {
@@ -482,7 +472,6 @@ def parse_arguments():
 
 def load_classes_from_txt(txt_path: Path) -> List[str]:
     """Loads the class names from a .txt. Expects one class per line"""
-
     if not Path(txt_path).exists():
         raise FileNotFoundError(f"Classes file not found: {txt_path}")
     with open(txt_path) as txt:
@@ -490,7 +479,6 @@ def load_classes_from_txt(txt_path: Path) -> List[str]:
     
 def main():
     """Main function to run the script from the terminal."""
-
     args = parse_arguments()
     try:
         classes = load_classes_from_txt(args.classes_file)
