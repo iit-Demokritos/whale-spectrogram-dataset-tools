@@ -5,13 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict, Any, Callable
 from PIL import Image, ImageOps
 import copy
-
-def _is_valid_file(filepath: Path) -> bool:
-    """Helper function to filter any hidden .txt files, or files that are in hidden folders (e.g. ".ipynb_checkpoints", 
-    ".git", etc.)"""
-
-    check = lambda part: not part.startswith('.') or part == '..'
-    return all(map(check, filepath.parts))
+from utils import is_valid_file
 
 class WhalesBaseDataset(Dataset, ABC):
     """
@@ -19,8 +13,8 @@ class WhalesBaseDataset(Dataset, ABC):
     data.
 
     Attributes:
-        image_dir: Resolved path to the subset's image directory.
-        label_dir: Resolved path to the subset's label directory.
+        images_dir: Resolved path to the subset's image directory.
+        labels_dir: Resolved path to the subset's label directory.
         image_paths: List of image file paths of teh subset.
         labels_data: Dictionary of all parsed labels. Image names serve as keys.      
     """
@@ -40,20 +34,20 @@ class WhalesBaseDataset(Dataset, ABC):
         self.transform = transform
 
         # Get the paths to images and labels for the subset
-        self.image_dir, self.label_dir = self._get_paths()
+        self.images_dir, self.labels_dir = self._get_paths()
 
         # Validate directories
-        if not self.image_dir.exists():
+        if not self.images_dir.exists():
             raise FileNotFoundError(
-                f'Image directory not found: {self.image_dir}\n'
+                f'Image directory not found: {self.images_dir}\n'
             )
-        if not self.label_dir.exists():
+        if not self.labels_dir.exists():
             raise FileNotFoundError(
-                f'Labels directory not found: {self.label_dir}\n'
+                f'Labels directory not found: {self.labels_dir}\n'
             )
         
         # Load te images
-        all_image_paths = [p for p in self.image_dir.rglob('*.png') if _is_valid_file(p)]
+        all_image_paths = [p for p in self.images_dir.rglob('*.png') if is_valid_file(p)]
         self.image_paths = sorted(all_image_paths, key=lambda path: path.name)
 
         # Load the labels
@@ -72,19 +66,19 @@ class WhalesBaseDataset(Dataset, ABC):
         Abstract method to get the specific image and label directories.
 
         Returns:
-            A tuple containing (image_dir, label_dir).
+            A tuple containing (images_dir, labels_dir).
         """
         pass
 
     @abstractmethod
-    def _parse_label(self, 
-        label_path: str | Path
+    def _parse_labels(self, 
+        labels_path: str | Path
     ) -> Dict[str, Any]:
         """
         Abstract method to parse a specific label file format.
 
         Args:
-            label_path: Path to the JSON file with the label(s).
+            labels_path: Path to the JSON file with the label(s).
 
         Returns:
             Dict: A dictionary where the key is the image filename and the value is its annotation data.
@@ -93,13 +87,13 @@ class WhalesBaseDataset(Dataset, ABC):
 
     def _parse_all_labels(self):
         """Iterates over all JSON files in the label directory and aggregates them into a single dictionary."""
-        label_paths = self.label_dir.rglob('*.json')
+        label_paths = self.labels_dir.rglob('*.json')
         labels_data = {}
         for path in label_paths:
-            if _is_valid_file(path):
+            if is_valid_file(path):
 
                 # Update the dictionary with all the label info (cache)
-                labels_data |= self._parse_label(path)
+                labels_data |= self._parse_labels(path)
 
         return labels_data
     
@@ -137,8 +131,8 @@ class LineLevelDataset(WhalesBaseDataset):
     def _get_paths(self) -> Tuple[Path, Path]:
         return self.dataset_dir / 'images' / 'lines', self.dataset_dir / 'labels' / 'line_level'
     
-    def _parse_label(self, 
-        label_path: str | Path
+    def _parse_labels(self, 
+        labels_path: str | Path
     ) -> Dict[str, Dict[str, List]]:
         """
         Parses line-level JSON data and reformats it for easy lookup by line image name.
@@ -162,7 +156,7 @@ class LineLevelDataset(WhalesBaseDataset):
         }
 
         Args:
-            label_path: Path to the JSON.
+            labels_path: Path to the JSON.
         Returns:
             A dictionary where the key is the image file name and its values are the intervals and their respective unit 
             classes. It follows the structure:
@@ -174,7 +168,7 @@ class LineLevelDataset(WhalesBaseDataset):
                 }
             }
         """
-        with open(label_path) as js:
+        with open(labels_path) as js:
             data = json.load(js)
 
         labels_info = {}
@@ -192,8 +186,8 @@ class PageLevelDataset(WhalesBaseDataset):
     def _get_paths(self):
         return self.dataset_dir / 'images' / 'pages', self.dataset_dir / 'labels' / 'page_level'
 
-    def _parse_label(self, 
-        label_path: str | Path
+    def _parse_labels(self, 
+        labels_path: str | Path
     ) -> Dict[str, List[float]]:
         """
         Parses page-level JSON data and extracts all line polygon coordinates.
@@ -213,7 +207,7 @@ class PageLevelDataset(WhalesBaseDataset):
         }
 
         Args:
-            label_path: Path to the JSON.
+            labels_path: Path to the JSON.
         Returns:
             A dictionary where the key is the image name and its value is a list of all polygon coordinates. It follows 
             the structure:
@@ -226,7 +220,7 @@ class PageLevelDataset(WhalesBaseDataset):
                 ]
             }
         """
-        with open(label_path) as js:
+        with open(labels_path) as js:
             data = json.load(js)
 
         labels_info = {}
