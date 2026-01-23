@@ -1,0 +1,84 @@
+from pathlib import Path
+import json
+from typing import Dict, List, Callable
+
+def is_valid_file(filepath: Path) -> bool:
+    """
+    Function to filter any hidden .txt files, or files that are in hidden folders (e.g. ".ipynb_checkpoints", ".git", 
+    etc.).
+    """
+    check = lambda part: not part.startswith('.') or part == '..'
+    return all(map(check, filepath.parts))
+
+def parse_line_level_data( 
+    labels_path: str | Path
+) -> Dict[str, Dict[str, List]]:
+    """
+    Parses line-level JSON.
+
+    Expected JSON structure:
+    {   
+        'general_image_name': filename.png
+        'line_level_info': [
+            {
+                'image_name': 'filename-{line_id}.png',
+                'line_id': int,
+                'song_id': int,
+                'unit_intervals': [[start, end], ...],
+                'mute_intervals': [[start, end], ...],
+                'unit_classes': [class_name, ...],
+                'image_height': int,
+                'image_width': int
+            },
+            ...
+        ]
+    }
+
+    Args:
+        labels_path: Path to the JSON.
+    Returns:
+        A dictionary where the key is the image filename and its values are the intervals and their respective unit 
+        classes. It follows the structure:
+
+        new_dict = {
+            'filename-{line_id}.png': {
+                'unit_intervals': [[start, end], ...],
+                'unit_classes': [class_name, ...]
+            }
+        }
+    """
+    with open(labels_path) as js:
+        data = json.load(js)
+
+    labels_info = {}
+    for entry in data['line_level_info']:
+        image_name = entry['image_name']
+        labels_info[image_name] = {
+            'unit_intervals': entry['unit_intervals'],
+            'unit_classes': entry['unit_classes']
+        }
+
+    return labels_info 
+
+def aggregate_labels_info(
+    labels_dir: Path,
+    parser_func: Callable
+) -> Dict[str, Dict[str, List]]:
+    """
+    Iterates over all JSON files in the labels directory, applies the parser_func to each, and aggregates the results
+    into a general dictionary.
+
+    Arguments:
+        labels_dir: Path to the directory with the labels data, stored in JSON files.
+        parser_func: Function to apply to the JSON filepaths ("parse_line_level_data", "parse_page_level_data", etc.)
+    Returns:
+        A dictionary with the aggregated labels info for all the JSON files.
+    """
+    label_paths = labels_dir.rglob('*.json')
+    labels_data = {}
+    for path in label_paths:
+        if is_valid_file(path):
+            # Update the dictionary with all the labels info (cache)
+            labels_data |= parser_func(path)
+
+    return labels_data
