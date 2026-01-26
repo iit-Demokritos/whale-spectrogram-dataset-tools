@@ -60,7 +60,7 @@ def parse_line_level_data(
 def aggregate_labels_info(
     labels_dir: Path,
     parser_func: Callable
-) -> Dict[str, Dict[str, List]]:
+) -> Dict[str, Dict[str, List]] | None:
     """
     Iterates over all JSON files in the labels directory, applies the parser_func to each, and aggregates the results
     into a general dictionary.
@@ -71,7 +71,11 @@ def aggregate_labels_info(
     Returns:
         A dictionary with the aggregated labels info for all the JSON files.
     """
-    label_paths = labels_dir.rglob('*.json')
+    label_paths = list(labels_dir.rglob('*.json'))
+    if len(label_paths) == 0:
+        print('No JSON files with labes found!')
+        return None
+
     labels_data = {}
     for path in label_paths:
         if is_valid_file(path):
