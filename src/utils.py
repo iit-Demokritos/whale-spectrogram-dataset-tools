@@ -38,7 +38,7 @@ def parse_line_level_data(
         classes. It follows the structure:
 
         new_dict = {
-            'filename-{line_id}.png': {
+            'filename.png': {
                 'unit_intervals': [[start, end], ...],
                 'unit_classes': [class_name, ...]
             }
@@ -56,6 +56,52 @@ def parse_line_level_data(
         }
 
     return labels_info 
+
+def parse_page_level_data(
+        labels_path: str | Path
+) -> Dict[str, List[float]]:
+    """
+    Parses page-level JSON data and extracts all line polygon coordinates.
+
+    Expected JSON structure:
+    {
+        'image_name': 'filename.png',
+        'image_height': int,
+        'image_width': int,
+        'polygons': [
+            {   'line_id': int,
+                'song_id': int,
+                'points': [[x1, y1], [x2, y2], [x3, y3], ...]
+            },
+            ...
+        ]
+    }
+
+    Args:
+        labels_path: Path to the JSON.
+    Returns:
+        A dictionary where the key is the image name and its value is a list of all polygon coordinates. It follows 
+        the structure:
+
+        new_dict = {
+            'filename.png': [
+                [[x1, y1], [x2, y2], [x3, y3], ...],
+                [[x1, y1], [x2, y2], [x3, y3], ...],
+                ...
+            ]
+        }
+    """
+    with open(labels_path) as js:
+        data = json.load(js)
+
+    labels_info = {}
+    image_name = data['image_name']
+    poly_coords = []
+    for pol in data['polygons']:
+        poly_coords.append(pol['points'])
+    
+    labels_info[image_name] = poly_coords
+    return labels_info
 
 def aggregate_labels_info(
     labels_dir: Path,
@@ -76,10 +122,10 @@ def aggregate_labels_info(
         print('No JSON files with labes found!')
         return None
 
-    labels_data = {}
+    labels_info = {}
     for path in label_paths:
         if is_valid_file(path):
             # Update the dictionary with all the labels info (cache)
-            labels_data |= parser_func(path)
+            labels_info |= parser_func(path)
 
-    return labels_data
+    return labels_info

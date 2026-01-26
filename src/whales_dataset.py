@@ -51,7 +51,10 @@ class WhalesBaseDataset(Dataset, ABC):
         self.image_paths = sorted(all_image_paths, key=lambda path: path.name)
 
         # Load the labels
-        self.labels_data = self._parse_all_labels()
+        labels = self._parse_all_labels()
+        if labels is None:
+            raise FileNotFoundError(f'No label files found in: {self.labels_dir}')
+        self.labels_data = labels
 
         # Validate 1:1 correspondence between images and label
         for img_path in self.image_paths:

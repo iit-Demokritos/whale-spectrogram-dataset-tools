@@ -3,14 +3,16 @@ import cv2
 import argparse
 import numpy as np
 from pathlib import Path
-from typing import List, Dict, Tuple
-from src.utils import is_valid_file, parse_line_level_data, aggregate_labels_info
+from typing import List, Dict, Tuple, Callable
+from src.utils import is_valid_file, parse_line_level_data, parse_page_level_data, aggregate_labels_info
 
 def convert_intervals_to_bboxes(
     intervals: List[List[float]], 
     image_height: int
 ) -> List[Tuple[int, int, int, int]]:
     """Converts time intervals [start, stop] to bounding boxes [x, y, w, h]."""
+
+    # The bounding boxes will span from 5% to 95% of the image height, for better visualization
     y_min = int(0.05 * image_height)
     y_max = int(0.95 * image_height)
     height = y_max - y_min
@@ -27,14 +29,14 @@ def draw_annotations(
     labels: Dict[str, List],
 ) -> np.ndarray:
     """
-    Draws bounding boxes and labels on a given image.
+    Draws bounding boxes and labels on a given line-level image.
     
     Args:
         image: Numpy array (H, W, C).
         labels: Dictionary with 'unit_intervals' and 'unit_classes'.
         
     Returns:
-        Annotated image (numpy array).
+        The annotated image.
     """
     image = image.copy() 
     
@@ -52,7 +54,7 @@ def draw_annotations(
 
     for (x, y, w, h), cls_name in zip(bboxes, classes):
         # Draw bounding box
-        cv2.rectangle(image, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2) # Green box
+        cv2.rectangle(image, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
         
         # Draw label
         font = cv2.FONT_HERSHEY_DUPLEX
@@ -64,16 +66,48 @@ def draw_annotations(
         
     return image
 
-def save_multiple_line_level_annotations(
+def draw_page_level_annotations(
+    image: np.ndarray,
+    labels: List[List[float]],
+    resize_factor: float = .4
+) -> np.ndarray:
+    """
+    Draws line polygons on a given page-level image.
+    
+    Args:
+        image: Numpy array (H, W, C).
+        labels: List of line polygon coordinates.
+        
+    Returns:
+        The annotated image.
+    """
+    image = image.copy() 
+
+    for polygon in labels:
+        # Convert list of coordinates to numpy array of shape Nx1x2
+        pts = np.array(polygon, np.int32).reshape((-1, 1, 2))
+        cv2.polylines(image, [pts], isClosed=True, color=(0, 255, 0), thickness=3)
+
+    width = int(image.shape[1] * resize_factor)
+    height = int(image.shape[0] * resize_factor)
+
+    # Resize the image according to the resize factor (typically lower resolution, since they are only for visualization)
+    image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
+
+    return image
+
+def save_multiple_annotations(
     images_dir: Path, 
     labels_dir: Path, 
-    output_dir: Path
+    output_dir: Path,
+    parser_func: Callable,
+    annotation_func: Callable
 ):
     """
     Loads multiple images and their labels, annotates them, and saves to output_dir.
     """
     # Load all the labels
-    agg_labels_info = aggregate_labels_info(labels_dir, parse_line_level_data)
+    agg_labels_info = aggregate_labels_info(labels_dir, parser_func)
     if not agg_labels_info:
         print(f'No annotations found in "{labels_dir}" and its subdirectories! There is no reason to save anything to: \
               "{output_dir}"')
@@ -100,7 +134,7 @@ def save_multiple_line_level_annotations(
 
         # Draw annotations
         labels = agg_labels_info[img_path.name]
-        annotated_img = draw_annotations(img, labels) 
+        annotated_img = annotation_func(img, labels) 
         
         # Save the produced image
         save_path = output_dir / img_path.name
@@ -108,11 +142,18 @@ def save_multiple_line_level_annotations(
         
         if (i + 1) % 10 == 0:
             print(f"Saved {i + 1} images...")
-    
     print('Done!')
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Annotations Visualization')
+    parser.add_argument(
+        '--level',
+        type=str,
+        choices=['line', 'page'],
+        required=True,
+        default='line',
+        help='Annotation level to visualize (line-level or page-level)'
+    )
     parser.add_argument(
         '--images_dir', 
         type=str, 
@@ -130,6 +171,7 @@ def parse_arguments():
     parser.add_argument(
         '--output_dir', 
         type=str, 
+        required=True,
         default='../data/visualized_annotations', 
         help='Output directory for the evaluation report file'
     )    
@@ -138,11 +180,21 @@ def parse_arguments():
 def main():
     """Main function to run the script from the terminal."""
     args = parse_arguments()
+
+    if args.level == 'line':
+        parser_func = parse_line_level_data
+        annotation_func = draw_annotations
+    else:
+        parser_func = parse_page_level_data
+        annotation_func = draw_page_level_annotations   
+
     try:
-        save_multiple_line_level_annotations(
+        save_multiple_annotations(
             Path(args.images_dir),
             Path(args.labels_dir),
-            Path(args.output_dir)
+            Path(args.output_dir),
+            parser_func,
+            annotation_func
         )
     except Exception as e:
         print(f"\n[CRITICAL ERROR] {e}")
