@@ -24,7 +24,7 @@ def convert_intervals_to_bboxes(
 
     return bboxes
 
-def draw_annotations(
+def draw_line_level_annotations(
     image: np.ndarray, 
     labels: Dict[str, List],
 ) -> np.ndarray:
@@ -53,6 +53,8 @@ def draw_annotations(
     text_bg_color = (255, 0, 0) # Blue
 
     for (x, y, w, h), cls_name in zip(bboxes, classes):
+        cls_name = str(cls_name)
+        
         # Draw bounding box
         cv2.rectangle(image, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
         
@@ -86,7 +88,7 @@ def draw_page_level_annotations(
     for polygon in labels:
         # Convert list of coordinates to numpy array of shape Nx1x2
         pts = np.array(polygon, np.int32).reshape((-1, 1, 2))
-        cv2.polylines(image, [pts], isClosed=True, color=(0, 255, 0), thickness=3)
+        cv2.polylines(image, [pts], isClosed=True, color=(0, 125, 255), thickness=3)
 
     width = int(image.shape[1] * resize_factor)
     height = int(image.shape[0] * resize_factor)
@@ -122,7 +124,7 @@ def save_multiple_annotations(
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print(f'Processing and saving {len(image_paths)} images to "{output_dir}"')
-    
+    images_num = len(image_paths)
     for i, img_path in enumerate(image_paths):
         if img_path.name not in agg_labels_info:
             continue
@@ -140,9 +142,9 @@ def save_multiple_annotations(
         save_path = output_dir / img_path.name
         cv2.imwrite(str(save_path), annotated_img)
         
-        if (i + 1) % 10 == 0:
-            print(f"Saved {i + 1} images...")
-    print('Done!')
+        #if (i + 1) % 10 == 0:
+        print(f"Saved {i + 1}/{images_num}  images...", end='\r')
+    print('\nDone!!!')
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Annotations Visualization')
@@ -183,8 +185,8 @@ def main():
 
     if args.level == 'line':
         parser_func = parse_line_level_data
-        annotation_func = draw_annotations
-    else:
+        annotation_func = draw_line_level_annotations
+    else: # page-level
         parser_func = parse_page_level_data
         annotation_func = draw_page_level_annotations   
 

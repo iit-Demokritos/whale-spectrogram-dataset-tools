@@ -155,7 +155,6 @@ class UnitIntervalsToYOLO:
 
         return image, {'bboxes': bboxes_tensor, 'cls': classes_tensor} 
     
-    
 class ComposeTransforms:
     """Composes a sequence of transforms that accept (image, labels) pairs."""
     def __init__(self, transforms):

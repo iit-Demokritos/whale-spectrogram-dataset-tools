@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict, Any, Callable
 from PIL import Image, ImageOps
 import copy
-from src.utils import is_valid_file, parse_line_level_data, aggregate_labels_info
+from src.utils import is_valid_file, parse_line_level_data, parse_page_level_data, aggregate_labels_info
 
 class WhalesBaseDataset(Dataset, ABC):
     """
@@ -21,16 +21,18 @@ class WhalesBaseDataset(Dataset, ABC):
     def __init__(
         self, 
         dataset_dir: str | Path, 
-        classes_filepath: str | Path,
+        classes_filepath: str | Path | None = None,
         transform: Callable | None = None
     ):
+        """        
+        Args:
+            dataset_dir: Root directory containing images (PNGs) and labels (JSONs).
+            classes_filepath: Path to class definitions. It is optional, since it is required only for line-level datasets.
+            transform: Transform(s) to be applied to the dataset.
+        """
         super().__init__()
         self.dataset_dir = Path(dataset_dir)
 
-        with open(classes_filepath) as f: # NOTE: .txt file
-            classes = [c.strip() for c in f if c.strip()]
-
-        self.class_map = {cls: i for i, cls in enumerate(classes)}
         self.transform = transform
 
         # Get the paths to images and labels for the subset
@@ -112,10 +114,6 @@ class WhalesBaseDataset(Dataset, ABC):
         image = ImageOps.invert(image) # Negate the image (white foreground/zero background). Still in [0, 255] (uint8).
         labels = copy.deepcopy(self.labels_data[image_path.name])
 
-        labels['unit_classes'] = [
-            self.class_map[c] for c in labels['unit_classes']
-        ]
-
         if self.transform:
             image, labels = self.transform(image, labels)
 
@@ -123,13 +121,34 @@ class WhalesBaseDataset(Dataset, ABC):
     
 class LineLevelDataset(WhalesBaseDataset):
     """Dataset loader for the line-level subset."""
+
+    def __init__(
+        self, 
+        dataset_dir: str | Path, 
+        classes_filepath: str | Path,
+        transform: Callable | None = None
+    ):  
+        # Load the classes (.txt file) and construct the class map
+        with open(classes_filepath) as f: 
+            classes = [c.strip() for c in f if c.strip()]
+
+        self.class_map = {cls: i for i, cls in enumerate(classes)}
+
+        super().__init__(dataset_dir, classes_filepath, transform)
+
     def _get_paths(self) -> Tuple[Path, Path]:
         return self.dataset_dir / 'images' / 'lines', self.dataset_dir / 'labels' / 'line_level'
     
     def _parse_labels(self, 
         labels_path: str | Path
     ) -> Dict[str, Dict[str, List]]:
-        return parse_line_level_data(labels_path) 
+        """Parses line-level annotations, then maps the class names to integers to match model's (e.g. YOLO) requirements."""
+        labels_info = parse_line_level_data(labels_path)
+
+        for annotations in labels_info.values():
+            annotations['unit_classes'] = [self.class_map[c] for c in annotations['unit_classes']]   
+               
+        return labels_info  
 
 class PageLevelDataset(WhalesBaseDataset):
     """Dataset loader for the page-level subset."""
@@ -139,46 +158,5 @@ class PageLevelDataset(WhalesBaseDataset):
     def _parse_labels(self, 
         labels_path: str | Path
     ) -> Dict[str, List[float]]:
-        """
-        Parses page-level JSON data and extracts all line polygon coordinates.
-
-        Expected JSON structure:
-        {
-            'image_name': 'filename.png',
-            'image_height': int,
-            'image_width': int,
-            'polygons': [
-                {   'line_id': int,
-                    'song_id': int,
-                    'points': [[x1, y1], [x2, y2], [x3, y3], ...]
-                },
-                ...
-            ]
-        }
-
-        Args:
-            labels_path: Path to the JSON.
-        Returns:
-            A dictionary where the key is the image name and its value is a list of all polygon coordinates. It follows 
-            the structure:
-
-            new_dict = {
-                'filename.png': [
-                    [[x1, y1], [x2, y2], [x3, y3], ...],
-                    [[x1, y1], [x2, y2], [x3, y3], ...],
-                    ...
-                ]
-            }
-        """
-        with open(labels_path) as js:
-            data = json.load(js)
-
-        labels_info = {}
-        image_name = data['image_name']
-        poly_coords = []
-        for pol in data['polygons']:
-            poly_coords.append(pol['points'])
-        
-        labels_info[image_name] = poly_coords
-        return labels_info
+        return parse_page_level_data(labels_path)
 
