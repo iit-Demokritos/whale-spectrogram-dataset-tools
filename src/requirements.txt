@@ -1,7 +1,0 @@
-auto_mix_prep==0.2.0
-numpy==2.4.1
-opencv_python==4.13.0.90
-pandas==3.0.0
-Pillow==12.1.0
-torch==2.9.1+cu126
-torchvision==0.24.1+cu126
