@@ -21,7 +21,7 @@ A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Hum
 * ### Option A: Using `uv` (recommended).
 1. Install `uv' from https://astral.sh/uv.
 2. Install dependencies:
-   ```bash
+   ```bash 
    uv sync
    ```
 
@@ -33,4 +33,8 @@ A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Hum
    ```
 
 ## 📥 Download the Dataset
-1. Download the Whales Spectrogram Dataset [here](LINK TO BE PROVIDED AT THE FUTURE).  
+1. Download the Whales Spectrogram Dataset [here](https://iptademokritosgr-my.sharepoint.com/:f:/g/personal/gmatidis_iit_demokritos_gr/IgDgYsfVn2V7T5eZEJzxkUrOAXc8Enf_BOgRjALbIt9vM00?e=ruXzIP).
+2. Copy the dataset directory in [./data](./data).
+
+## Visualize the data
+TO BE WRITTEN!!!
