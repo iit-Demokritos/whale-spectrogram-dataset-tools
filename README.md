@@ -83,4 +83,8 @@ uv run whales-eval \
 --score_thresh 0.25
 ```
 
-**NOTE** that **all** filenames in `gt_dir` and `pred_dir` are required to match 1-by-1, otherwise the script will raise a `FileNotFoundError`.
+**NOTE that**:
+* **All filenames** in `gt_dir` and `pred_dir` are required to match 1-by-1, otherwise the script will raise a `FileNotFoundError`.
+* Every ground truth and prediction file must be in .txt format. Each line in the files stores info for a bounding box as:
+   * ***Class, Xmin, Ymin, Xmax, Ymax***, for ground truths.
+   * ***Class, Xmin, Ymin, Xmax, Ymax, Confidence score***, for predictions.
