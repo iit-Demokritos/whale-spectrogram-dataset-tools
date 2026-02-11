@@ -1,6 +1,6 @@
 # 🐋 whale-spectrogram-dataset-tools
 
-A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Humpback Whale song spectrograms. This repository serves as supplementary material to the Humpback Whales Spectrogram Dataset.
+A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Humpback Whale song spectrograms. This repository serves as supplementary material to the Humpback Whales Spectrogram Dataset. The dataset, as well as the data descriptor (paper) are yet to be published. 
 
 ## 📂 Project Structure
 
@@ -47,4 +47,24 @@ The data must be organized as follows:
 ![Dataset Directory Structure](./assets/dataset_structure_preview.png)
 
 ## Visualize the data
-TO BE WRITTEN!!!!@
+The dataset images with drawn annotations can be visualized and saved in a directory, for further inspection. As an example, we provide indicative CLI commands to visualize the data of the [samples](./data/samples/), for line-level and page-level respectively:
+
+- Visualize lines:
+   ```bash
+   uv run python -m whale_spectrogram_dataset_tools.visualization \
+   --level line \
+   --images_dir data/samples/images/lines/ \
+   --labels_dir data/samples/labels/line_level/ \
+   --output_dir data/samples/visualized_data/lines
+   ```
+
+- Visualize pages:
+   ```bash
+   uv run python -m whale_spectrogram_dataset_tools.visualization \
+   --level page \
+   --images_dir data/samples/images/pages/ \
+   --labels_dir data/samples/labels/page_level/ \
+   --output_dir data/samples/visualized_data/pages
+   ```
+
+If you do not work with `uv', you can just run the commands above by simply skipping "uv run" in the beginning of each command.
