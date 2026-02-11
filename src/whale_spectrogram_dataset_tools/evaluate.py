@@ -384,8 +384,8 @@ def load_predictions_and_gts(
     gt_files = list(filter(_is_valid_file, ground_truths_dir.rglob('*.txt')))
     
     if len(pred_files) != len(gt_files):
-            raise ValueError(f'File count mismatch! Found {len(pred_files)} predictions and {len(gt_files)} ground '\
-                             f'truths. The filenames must match 1-to-1.')    
+        raise ValueError(f'File count mismatch! Found {len(pred_files)} predictions and {len(gt_files)} ground '\
+                         f'truths. The filenames must match 1-to-1.')    
 
     # Sort according to the filenames
     sorting_key = lambda path: path.name

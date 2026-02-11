@@ -93,7 +93,7 @@ def draw_page_level_annotations(
     for polygon in labels:
         # Convert list of coordinates to numpy array of shape Nx1x2
         pts = np.array(polygon, np.int32).reshape((-1, 1, 2))
-        cv2.polylines(image, [pts], isClosed=True, color=(0, 125, 255), thickness=3)
+        cv2.polylines(image, [pts], isClosed=True, color=(255, 125, 0), thickness=3)
 
     width = int(image.shape[1] * resize_factor)
     height = int(image.shape[0] * resize_factor)

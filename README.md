@@ -46,7 +46,7 @@ NOTE: The full dataset is not published yet! For now, you can test and explore t
 The data must be organized as follows:
 ![Dataset Directory Structure](./assets/dataset_structure_preview.png)
 
-## Visualize the data
+## 🖼️ Visualize the data
 The dataset images with drawn annotations can be visualized and saved in a directory, for further inspection. As an example, we provide indicative CLI commands to visualize the data of the [samples](./data/samples/), for line-level and page-level respectively:
 
 - Visualize lines:
@@ -67,6 +67,20 @@ The dataset images with drawn annotations can be visualized and saved in a direc
    --output_dir data/samples/visualized_data/pages
    ```
 
-If you do not work with **`uv`**, you can just run the commands above by simply skipping "uv run" in the beginning of each command.
+If you do not work with **`uv`**, you can just run each the commands above by simply skipping "uv run" in the beginning.
 
-## Evaluate predictions
+## 🎯 Evaluate predictions
+Evaluate predictions as (example):
+
+```bash
+uv run whales-eval \
+--gt_dir ./data/samples/eval/ground_truth_xyxy/ \
+--pred_dir ./data/samples/eval/predictions_xyxy/ \
+--classes_file ./data/classes.txt \
+--output_dir ./data/samples/eval/evaluation_results \
+--file_basename report \
+--output_format CSV \
+--score_thresh 0.25
+```
+
+**NOTE** that **all** filenames in `gt_dir` and `pred_dir` are required to match 1-by-1, otherwise the script will raise a `FileNotFoundError`.
