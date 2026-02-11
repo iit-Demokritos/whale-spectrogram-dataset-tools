@@ -19,7 +19,7 @@ A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Hum
 
 ### Set up this project using the modern `uv` manager (recommended) or the traditional `pip`.
 * ### Option A: Using `uv` (recommended).
-1. Install `uv' from https://astral.sh/uv.
+1. Install **uv** from https://astral.sh/uv.
 2. Install dependencies:
    ```bash 
    uv sync
@@ -41,7 +41,10 @@ A PyTorch-based toolkit for loading, processing, visualizing, and evaluating Hum
    ```
 
 ## 📥 Download the Dataset
-NOTE: The dataset is not available yet! For now, you can test and explore the project's tools on the [sample data](./data/samples/).
+NOTE: The full dataset is not published yet! For now, you can test and explore the project's tools on the [sample data](./data/samples/) (comes with "git clone").
+
+The data must be organized as follows:
+![Dataset Directory Structure](./assets/dataset_structure_preview.png)
 
 ## Visualize the data
 TO BE WRITTEN!!!!@

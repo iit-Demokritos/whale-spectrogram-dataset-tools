@@ -52,6 +52,9 @@ wheels/
 !src/samples/
 !src/samples/*
 
+# Keep assets like icons and logos.
+!assets/
+
 # --- Project Metadata & Tools ---
 # Keep pyproject.toml and uv.lock, but ignore local tool settings.
 .idea/
