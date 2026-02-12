@@ -14,6 +14,12 @@ dependencies = [
     "torchvision>=0.19.0",
 ]
 
+[project.optional-dependencies] # Needed for notebook development and testing
+dev = [
+    "jupyterlab",
+    "ipykernel",
+]
+
 [tool.uv]
 package = true
 index-strategy = "unsafe-best-match"
@@ -22,10 +28,9 @@ index-strategy = "unsafe-best-match"
 whales-eval = "whale_spectrogram_dataset_tools.evaluate:main"
 whales-visualize = "whale_spectrogram_dataset_tools.visualization:main"
 
-
 [build-system]
-requires = ["uv_build>=0.9.29,<0.10.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [[tool.uv.index]]
 name = "pytorch-cu124"
